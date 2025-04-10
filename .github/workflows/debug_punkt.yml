@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies 
       run: |
         python -m pip install --upgrade pip 
-        pip install validate_punkt_requirements.txt #1
+        pip install -r validate_punkt_requirements.txt #1
         pip install lxml[html_clean]
 
     - name: Run Enterprise Risk News script
