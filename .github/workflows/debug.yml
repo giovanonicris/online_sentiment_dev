@@ -18,16 +18,16 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Install dependencies
+    - name: Install dependencies 
       run: |
-        python -m pip install --upgrade pip
-        pip install -r DEBUG-requirements.txt
+        python -m pip install --upgrade pip 
+        pip install validate_punkt_requirements.txt #1
         pip install lxml[html_clean]
 
     - name: Run Enterprise Risk News script
       run: |
-        echo "Running DEBUG-EnterpriseRiskNews.py..."
-        python DEBUG-EnterpriseRiskNews.py || echo "DEBUG-EnterpriseRiskNews.py failed!" # debug script
+        echo "Running DEBUG-validate_punkt.py..." #2
+        python DEBUG-validate_punkt.py || echo "DEBUG-validate_punkt.py failed!" #3
 
     - name: Check for changes
       id: check_changes
