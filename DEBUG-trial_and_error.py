@@ -39,6 +39,7 @@ def decode_term(encoded):
 
 read_file['SEARCH_TERMS'] = read_file['ENCODED_TERMS'].apply(decode_term)
 search_term = read_file['SEARCH_TERMS'].dropna().iloc[0]
+print(f"First decoded search term: {search_term}")
 
 # prep lists to store new entries
 search_terms = []
@@ -68,7 +69,12 @@ ARTICLE_LIMIT = 20
 article_count = 0
 
 try:
-    req = requests.get(url_start + search_term + url_end, headers=header)
+    # isolate rss url created
+    rss_url = url_start + search_term + url_end
+    print(f"Constructed URL: {rss_url}")
+    req = requests.get(rss_url, headers=header)
+    print("RSS request is completed.")
+
     soup = BeautifulSoup(req.text, 'xml')
 
     for item in soup.find_all("item"):
