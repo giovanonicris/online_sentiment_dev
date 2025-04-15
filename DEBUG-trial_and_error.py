@@ -6,6 +6,7 @@ from newspaper import Article, Config
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from googlenewsdecoder import new_decoderv1
 from urllib.parse import urlparse
+from urllib.parse import quote_plus
 import datetime as dt
 import nltk
 
@@ -70,8 +71,8 @@ article_count = 0
 
 try:
     # broaden time window to 7 days for more results
-    url_end = '}%20when%3A7d'
-    rss_url = url_start + search_term + url_end
+    encoded_term = quote_plus(search_term.strip())
+    rss_url = url_start + encoded_term + url_end
     print(f"Constructed URL: {rss_url}")
     
     req = requests.get(rss_url, headers=header, timeout=10)
