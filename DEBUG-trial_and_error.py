@@ -78,6 +78,7 @@ try:
     print("RSS request is completed.")
 
     soup = BeautifulSoup(req.text, 'xml')
+    print(req.text[:1000])
     items = soup.find_all("item")
     print(f"Found {len(items)} RSS items")
 
