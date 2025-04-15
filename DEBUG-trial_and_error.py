@@ -38,6 +38,7 @@ def decode_term(encoded):
         return None
 
 read_file['SEARCH_TERMS'] = read_file['ENCODED_TERMS'].apply(decode_term)
+search_term = read_file['SEARCH_TERMS'].dropna().iloc[0]
 
 # prep lists to store new entries
 search_terms = []
@@ -57,6 +58,7 @@ if os.path.exists('filter_out_sources.csv'):
     df = pd.read_csv('filter_out_sources.csv', encoding='utf-8')
     filtered_sources = set(df.iloc[:, 0].dropna().str.lower().str.strip())
 
+
 # Grab Google links
 url_start = 'https://news.google.com/rss/search?q={'
 url_end = '}%20when%3A6h'
@@ -65,72 +67,80 @@ url_end = '}%20when%3A6h'
 ARTICLE_LIMIT = 20
 article_count = 0
 
-# fetch news, add newspaper article function within the loop
+try:
+    req = requests.get(url_start + term + url_end, headers=header)
+    soup = BeautifulSoup(req.text, 'xml')
 
-for term in read_file.SEARCH_TERMS.dropna():
-    if article_count >= ARTICLE_LIMIT:
-        break
-    try:
-        req = requests.get(url_start + term + url_end, headers=header)
-        soup = BeautifulSoup(req.text, 'xml')
+    for item in soup.find_all("item"):
+        if article_count >= ARTICLE_LIMIT:
+            break
 
-        for item in soup.find_all("item"):
-            if article_count >= ARTICLE_LIMIT:
-                break
+        title_text = item.title.text.strip()
+        encoded_url = item.link.text.strip()
+        source_text = item.source.text.strip().lower()
+        decoded = new_decoderv1(encoded_url, interval=5)
 
-            title_text = item.title.text.strip()
-            encoded_url = item.link.text.strip()
-            source_text = item.source.text.strip().lower()
-            decoded = new_decoderv1(encoded_url, interval=5)
+        if not decoded.get("status"):
+            print(f"Decoder failed for URL: {encoded_url}")
+            continue
 
-            if not decoded.get("status"):
+        decoded_url = decoded['decoded_url'].strip().lower()
+        domain_name = urlparse(decoded_url).netloc.lower()
+
+        if not decoded_url.endswith(('.com', '.edu', '.org', '.net')):
+            print(f"Skipped non-standard domain: {decoded_url}")
+            continue
+        if source_text in filtered_sources:
+            print(f"Filtered out source: {source_text}")
+            continue
+        if "/en/" in decoded_url:
+            continue
+
+        #log outcome of each step in Article
+        article = Article(decoded_url, config=config)
+        try:
+            #download
+            print(f"Attempt article download: {decoded_url}")
+            article.download()
+            if article.download_state != 2:
+                print(f"Download failed for: {decoded_url}")
                 continue
+            #parse
+            print(f"Downloaded successfully: {decoded_url}")
+            article.parse()
+            print(f"Parsed successfully: {decoded_url}")
+            #summarize
+            article.nlp()
+            print(f"NLP completed: {decoded_url}")
 
-            decoded_url = decoded['decoded_url'].strip().lower()
-            domain_name = urlparse(decoded_url).netloc.lower()
-
-            #simplified logic sequence
-            if not decoded_url.endswith(('.com', '.edu', '.org', '.net')):
-                continue
-            if source_text in filtered_sources:
-                continue
-            if "/en/" in decoded_url:
-                continue
-
-            # article info - summary function
-            article = Article(decoded_url, config=config)
-            try:
-                article.download()
-                article.parse()
-                article.nlp()
-                text = article.summary.strip() or article.text.strip()
-            except:
-                continue
-
+            text = article.summary.strip() or article.text.strip()
             if not text:
+                print(f"No content extracted from: {decoded_url}")
                 continue
 
-            # sentiment analyzer
-            score = SentimentIntensityAnalyzer().polarity_scores(text)['compound']
-            sentiment = 'positive' if score >= 0.05 else 'negative' if score <= -0.05 else 'neutral'
+        except Exception as e:
+            print(f"Newspaper3k error for {decoded_url}: {e}")
+            continue
 
-            # append data
-            search_terms.append(term)
-            title.append(title_text)
-            source.append(source_text)
-            link.append(decoded_url)
-            summary.append(text)
-            keywords.append(article.keywords)
-            polarity.append(f"{score}")
-            sentiments.append(sentiment)
-            published.append(parser.parse(item.pubDate.text).date() if item.pubDate else None)
-            domain.append(domain_name)
-            article_count += 1
+        score = SentimentIntensityAnalyzer().polarity_scores(text)['compound']
+        sentiment = 'positive' if score >= 0.05 else 'negative' if score <= -0.05 else 'neutral'
 
-    except requests.exceptions.RequestException as e:
-        print(f"Request error for term {term}: {e}")
+        search_terms.append(search_term)
+        title.append(title_text)
+        source.append(source_text)
+        link.append(decoded_url)
+        summary.append(text)
+        keywords.append(article.keywords)
+        polarity.append(f"{score}")
+        sentiments.append(sentiment)
+        published.append(parser.parse(item.pubDate.text).date() if item.pubDate else None)
+        domain.append(domain_name)
+        article_count += 1
 
-# build and write data frame
+except requests.exceptions.RequestException as e:
+    print(f"Request error for RSS: {e}")
+
+# save results
 alerts = pd.DataFrame({
     'SEARCH_TERMS': search_terms,
     'TITLE': title,
@@ -145,4 +155,4 @@ alerts = pd.DataFrame({
 })
 
 alerts['LAST_RUN_TIMESTAMP'] = dt.datetime.now().isoformat()
-alerts.to_csv('DEBUG-trial_and_error_results.csv', index=False, encoding='utf-8')
+alerts.to_csv('DEBUG-validate_newspaper3k_results.csv', index=False, encoding='utf-8')
