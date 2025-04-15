@@ -68,7 +68,7 @@ ARTICLE_LIMIT = 20
 article_count = 0
 
 try:
-    req = requests.get(url_start + term + url_end, headers=header)
+    req = requests.get(url_start + search_term + url_end, headers=header)
     soup = BeautifulSoup(req.text, 'xml')
 
     for item in soup.find_all("item"):
