@@ -63,7 +63,7 @@ if os.path.exists('filter_out_sources.csv'):
 
 # Grab Google links
 url_start = 'https://news.google.com/rss/search?q='
-url_end = '%20when%3A1d'
+url_end = '%20when%3A7d'
 
 # limit article, get small sample for quick debugging
 ARTICLE_LIMIT = 20
