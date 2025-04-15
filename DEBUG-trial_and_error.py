@@ -145,4 +145,4 @@ alerts = pd.DataFrame({
 })
 
 alerts['LAST_RUN_TIMESTAMP'] = dt.datetime.now().isoformat()
-alerts.to_csv('DEBUG-validate_punkt_results.csv', index=False, encoding='utf-8')
+alerts.to_csv('DEBUG-trial_and_error_results.csv', index=False, encoding='utf-8')
