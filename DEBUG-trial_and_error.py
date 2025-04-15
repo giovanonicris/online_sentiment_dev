@@ -70,7 +70,8 @@ ARTICLE_LIMIT = 20
 article_count = 0
 
 try:
-    encoded_term = quote_plus(search_term.strip())
+    search_term = f'"{search_term.strip()}"'
+    encoded_term = quote_plus(search_term)
     rss_url = url_start + encoded_term + url_end
     print(f"Constructed URL: {rss_url}")
     
