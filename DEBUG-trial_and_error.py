@@ -69,53 +69,56 @@ ARTICLE_LIMIT = 20
 article_count = 0
 
 try:
-    # isolate rss url created
+    # broaden time window to 7 days for more results
+    url_end = '}%20when%3A7d'
     rss_url = url_start + search_term + url_end
     print(f"Constructed URL: {rss_url}")
-    req = requests.get(rss_url, headers=header)
+    
+    req = requests.get(rss_url, headers=header, timeout=10)
     print("RSS request is completed.")
 
     soup = BeautifulSoup(req.text, 'xml')
+    items = soup.find_all("item")
+    print(f"Found {len(items)} RSS items")
 
-    for item in soup.find_all("item"):
+    for item in items:
+        print("Processing item...")
         if article_count >= ARTICLE_LIMIT:
             break
 
-        title_text = item.title.text.strip()
-        encoded_url = item.link.text.strip()
-        source_text = item.source.text.strip().lower()
-        decoded = new_decoderv1(encoded_url, interval=5)
-
-        if not decoded.get("status"):
-            print(f"Decoder failed for URL: {encoded_url}")
-            continue
-
-        decoded_url = decoded['decoded_url'].strip().lower()
-        domain_name = urlparse(decoded_url).netloc.lower()
-
-        if not decoded_url.endswith(('.com', '.edu', '.org', '.net')):
-            print(f"Skipped non-standard domain: {decoded_url}")
-            continue
-        if source_text in filtered_sources:
-            print(f"Filtered out source: {source_text}")
-            continue
-        if "/en/" in decoded_url:
-            continue
-
-        #log outcome of each step in Article
-        article = Article(decoded_url, config=config)
         try:
-            #download
+            title_text = item.title.text.strip()
+            encoded_url = item.link.text.strip()
+            source_text = item.source.text.strip().lower()
+            print(f"Title: {title_text}")
+            print(f"Encoded URL: {encoded_url}")
+
+            decoded = new_decoderv1(encoded_url, interval=5)
+            if not decoded.get("status"):
+                print(f"Decoder failed for URL: {encoded_url}")
+                continue
+
+            decoded_url = decoded['decoded_url'].strip().lower()
+            domain_name = urlparse(decoded_url).netloc.lower()
+
+            if not decoded_url.endswith(('.com', '.edu', '.org', '.net')):
+                print(f"Skipped non-standard domain: {decoded_url}")
+                continue
+            if source_text in filtered_sources:
+                print(f"Filtered out source: {source_text}")
+                continue
+            if "/en/" in decoded_url:
+                continue
+
+            article = Article(decoded_url, config=config)
             print(f"Attempt article download: {decoded_url}")
             article.download()
             if article.download_state != 2:
                 print(f"Download failed for: {decoded_url}")
                 continue
-            #parse
-            print(f"Downloaded successfully: {decoded_url}")
+
             article.parse()
             print(f"Parsed successfully: {decoded_url}")
-            #summarize
             article.nlp()
             print(f"NLP completed: {decoded_url}")
 
@@ -125,7 +128,7 @@ try:
                 continue
 
         except Exception as e:
-            print(f"Newspaper3k error for {decoded_url}: {e}")
+            print(f"Newspaper3k error during processing item: {e}")
             continue
 
         score = SentimentIntensityAnalyzer().polarity_scores(text)['compound']
@@ -143,8 +146,9 @@ try:
         domain.append(domain_name)
         article_count += 1
 
-except requests.exceptions.RequestException as e:
-    print(f"Request error for RSS: {e}")
+except Exception as e:
+    print(f"Fatal error during RSS loop: {e}")
+
 
 # save results
 alerts = pd.DataFrame({
