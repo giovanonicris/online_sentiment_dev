@@ -62,15 +62,14 @@ if os.path.exists('filter_out_sources.csv'):
 
 
 # Grab Google links
-url_start = 'https://news.google.com/rss/search?q={'
-url_end = '}%20when%3A6h'
+url_start = 'https://news.google.com/rss/search?q='
+url_end = '%20when%3A7d'
 
 # limit article, get small sample for quick debugging
 ARTICLE_LIMIT = 20
 article_count = 0
 
 try:
-    # broaden time window to 7 days for more results
     encoded_term = quote_plus(search_term.strip())
     rss_url = url_start + encoded_term + url_end
     print(f"Constructed URL: {rss_url}")
