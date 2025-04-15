@@ -1,4 +1,4 @@
-name: Debug Punkt - Quick Sample
+name: Trial-Error & Write Sample 
 
 on:
   workflow_dispatch:  # not scheduled, only runs when manually triggered
@@ -21,13 +21,13 @@ jobs:
     - name: Install dependencies 
       run: |
         python -m pip install --upgrade pip 
-        pip install -r validate_punkt_requirements.txt #1
+        pip install -r debug_trial_and_error_requirements.txt #1
         pip install lxml[html_clean]
 
     - name: Run Enterprise Risk News script
       run: |
-        echo "Running DEBUG-validate_punkt.py..." #2
-        python DEBUG-validate_punkt.py || echo "DEBUG-validate_punkt.py failed!" #3
+        echo "Running DEBUG-trial_and_error.py..." #2
+        python DEBUG-trial_and_error.py || echo "DEBUG-trial_and_error.py failed!" #3
 
     - name: Check for changes
       id: check_changes
