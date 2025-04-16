@@ -69,7 +69,7 @@ url_end = '%20when%3A7d'
 ARTICLE_LIMIT = 20
 article_count = 0
 
-for search_term in read_file['SEARCH_TERMS'].dropna():
+for search_term in read_file['SEARCH_TERMS'].dropna().iloc[:3]:
     print(f"Trying search term: {search_term}")
     encoded_term = quote_plus(search_term.strip())
     rss_url = url_start + encoded_term + url_end
@@ -107,8 +107,8 @@ for search_term in read_file['SEARCH_TERMS'].dropna():
                 decoded_url = decoded['decoded_url'].strip().lower()
                 domain_name = urlparse(decoded_url).netloc.lower()
 
-                if not decoded_url.endswith(('.com', '.edu', '.org', '.net')):
-                    print(f"Skipped non-standard domain: {decoded_url}")
+                if not domain_name.endswith(('.com', '.edu', '.org', '.net')):
+                    print(f"Skipped non-standard domain: {domain_name}")
                     continue
                 if source_text in filtered_sources:
                     print(f"Filtered out source: {source_text}")
