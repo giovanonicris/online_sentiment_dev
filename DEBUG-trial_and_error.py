@@ -16,6 +16,12 @@ try:
 except LookupError:
     nltk.download('punkt')
 
+# for punkt_tab required by some env, fixes error "Resource punkt_tab not found. Please use the NLTK Downloader to obtain the resource"
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+
 # Create a list of random user agents
 user_agent_list = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...Safari/605.1.15',
